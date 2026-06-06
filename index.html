@@ -187,6 +187,14 @@ tr:hover td{background:var(--g50)}
 
 /* MISC */
 .chip{display:inline-block;padding:3px 10px;background:var(--g100);border-radius:20px;font-size:12px;color:var(--g600);font-weight:500}
+.dep-picker{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.dep-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--g200);border-radius:var(--r-sm);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.dep-opt.sel{border-color:var(--p);background:var(--p-lt)}
+.dep-opt input[type=radio]{display:none}
+.dep-ic{font-size:22px;flex-shrink:0}
+.dep-txt strong{display:block;font-size:14px;font-weight:600;color:var(--g900)}
+.dep-txt span{font-size:12px;color:var(--g500);display:block;margin-top:1px}
+.route-ok{margin-top:8px;padding:10px 12px;background:var(--green-lt);border-radius:8px;font-size:13px;color:#166534;border:1px solid rgb(22 163 74/.2)}
 .eu-prefix{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--g500);font-weight:600;pointer-events:none}
 .divider{height:1px;background:var(--g100);margin:14px 0}
 </style>
@@ -275,6 +283,7 @@ const I={
 
 const LOGO_B64='data:image/png;base64,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';
 const LOGO_HTML=`<img src="${LOGO_B64}" class="l-logo-img-hdr" alt="Think! AV">`;
+const OFFICE_ADDR='Radonstraat 32, 2718TA Zoetermeer';
 
 // ─── HELPERS ─────────────────────────────────────────────────
 const H=(s)=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -384,7 +393,7 @@ function entItem(e,users){
     <div class="ei-ic ${isPark?'park':'trip'}">${isPark?'🅿️':'🚗'}</div>
     <div class="ei-cnt">
       <div class="ei-title">${H(e.dest||e.loc||'Onbekend')}</div>
-      <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}</div>
+      <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${e.departure==='office'?' · 🏢':e.departure==='home'?' · 🏠':''}</div>
       <div style="margin-top:4px">${statusBadge(e.status)}</div>
     </div>
     <div class="ei-r">
@@ -398,8 +407,10 @@ function empAddTrip(){
   const u=DB.users().find(x=>x.id===S.user.id);
   const hkm=parseFloat(u?.homeKm||0);const ed=S.editEntry;
   const initDate=ed?.date||today();
-  const initStatus=getDayStatus(initDate,u);
-  const initDedcut=ed?ed.dedcut:(initStatus?.type==='contract');
+  const initDep=ed?.departure||'home';
+  const initStatus=initDep==='office'?null:getDayStatus(initDate,u);
+  const initDedcut=ed?ed.dedcut:(initDep==='office'?false:initStatus?.type==='contract');
+  const hasAddr=!!u?.homeAddress;
   return`<div class="page">
     <div class="hdr">
       <button class="btn-ic" data-nav="emp-home">${I.back}</button>
@@ -407,23 +418,59 @@ function empAddTrip(){
       <div style="width:38px"></div>
     </div>
     <div class="card" style="margin-top:10px">
-      <div class="fg"><label class="fl">Datum</label><input class="fi" type="date" id="t-date" value="${initDate}" max="${today()}"></div>
-      ${hkm>0?`<div class="day-banner ${initStatus?'show':''} ${initStatus?.type||''}" id="day-banner">
-        <div class="day-banner-icon" id="day-banner-icon">${initStatus?.icon||''}</div>
-        <div class="day-banner-txt"><strong id="day-banner-title">${initStatus?.title||''}</strong><span id="day-banner-sub">${initStatus?.sub||''}</span></div>
-      </div>`:''}
+      <div class="fg">
+        <label class="fl">Datum</label>
+        <input class="fi" type="date" id="t-date" value="${initDate}" max="${today()}">
+      </div>
+
+      <div class="fg">
+        <label class="fl">Vertrekpunt</label>
+        <div class="dep-picker">
+          <label class="dep-opt ${initDep==='home'?'sel':''}">
+            <input type="radio" name="departure" value="home" ${initDep==='home'?'checked':''}>
+            <span class="dep-ic">🏠</span>
+            <div class="dep-txt"><strong>Vanaf thuis</strong><span>${hasAddr?H(u.homeAddress):'Thuisadres niet ingesteld — vraag beheerder'}</span></div>
+          </label>
+          <label class="dep-opt ${initDep==='office'?'sel':''}">
+            <input type="radio" name="departure" value="office" ${initDep==='office'?'checked':''}>
+            <span class="dep-ic">🏢</span>
+            <div class="dep-txt"><strong>Vanaf kantoor</strong><span>Radonstraat 32, Zoetermeer</span></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Adres bestemming <span style="color:var(--g400);font-weight:400">(voor automatische km-berekening)</span></label>
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <input class="fi" type="text" id="t-addr" placeholder="bijv. Herengracht 1, Amsterdam" value="${H(ed?.addr||'')}" style="flex:1">
+          <button class="btn btn-gh" id="btn-calc-route" style="white-space:nowrap;padding:12px 14px;flex-shrink:0">📍 Berekenen</button>
+        </div>
+        <div id="route-result" style="display:none"></div>
+        <div id="route-error" style="display:none"></div>
+      </div>
+
       <div class="fg"><label class="fl">Bestemming / omschrijving</label><input class="fi" type="text" id="t-dest" placeholder="bijv. Klant Amsterdam" value="${H(ed?.dest||'')}"></div>
       <div class="fg"><label class="fl">Project / klant</label><input class="fi" type="text" id="t-proj" placeholder="bijv. Projectnaam" value="${H(ed?.proj||'')}"></div>
-      <div class="fg"><label class="fl">Totaal gereden kilometers <span style="color:var(--g500);font-weight:400;font-size:12px">(heen + terug)</span></label><input class="fi" type="number" id="t-km" placeholder="0" min="0" step="0.5" value="${ed?.kmTot||''}"></div>
-      ${hkm>0?`<div id="deduct-wrap">
-        <label class="tog" for="t-ded" style="${initStatus?.type==='free'?'background:var(--green-lt);border-color:rgb(22 163 74/.25)':''}">
-          <input type="checkbox" id="t-ded" ${initDedcut?'checked':''}>
+      <div class="fg">
+        <label class="fl">Totaal gereden kilometers <span style="color:var(--g500);font-weight:400;font-size:12px">(heen + terug)</span></label>
+        <input class="fi" type="number" id="t-km" placeholder="0" min="0" step="0.5" value="${ed?.kmTot||''}">
+        <div class="fhint">Klik op 📍 Berekenen voor automatische berekening, of voer handmatig in.</div>
+      </div>
+
+      ${hkm>0?`<div class="day-banner ${initStatus&&initDep==='home'?'show':''} ${initStatus?.type||''}" id="day-banner">
+        <div class="day-banner-icon" id="day-banner-icon">${initStatus?.icon||''}</div>
+        <div class="day-banner-txt"><strong id="day-banner-title">${initStatus?.title||''}</strong><span id="day-banner-sub">${initStatus?.sub||''}</span></div>
+      </div>
+      <div id="deduct-wrap">
+        <label class="tog" for="t-ded" style="${initDep==='office'?'opacity:.5;background:var(--g100)':''}">
+          <input type="checkbox" id="t-ded" ${initDedcut?'checked':''} ${initDep==='office'?'disabled':''}>
           <div class="tog-lbl">
-            <strong id="ded-title">${initStatus?.type==='free'?'Volledige vergoeding (geen aftrek)':'Woon-werk aftrek toepassen'}</strong>
-            <span id="ded-sub">${initStatus?.type==='free'?`Extra dag / weekend — volledige vergoeding`:`Rechtstreeks van thuis — ${hkm} km woon-werk wordt afgetrokken`}</span>
+            <strong id="ded-title">${initDep==='office'?'Woon-werk aftrek n.v.t.':initStatus?.type==='free'?'Volledige vergoeding':'Woon-werk aftrek toepassen'}</strong>
+            <span id="ded-sub">${initDep==='office'?'Je vertrekt al vanaf kantoor':`${hkm} km woon-werk wordt afgetrokken op contractdagen`}</span>
           </div>
         </label>
       </div>`:''}
+
       <div class="fg"><label class="fl">Notities <span style="color:var(--g400);font-weight:400">(optioneel)</span></label><textarea class="fta" id="t-notes" placeholder="Extra toelichting...">${H(ed?.notes||'')}</textarea></div>
       <button class="btn btn-p btn-w" id="btn-save-trip">${I.chk} ${ed?'Wijzigingen opslaan':'Rit opslaan'}</button>
       ${ed?`<button class="btn btn-gh btn-w" style="margin-top:8px" id="btn-cancel-ed">Annuleren</button>`:''}
@@ -489,7 +536,7 @@ function empHist(){
         <div class="ei-ic ${e.type==='park'?'park':'trip'}">${e.type==='park'?'🅿️':'🚗'}</div>
         <div class="ei-cnt" style="flex:1;min-width:120px">
           <div class="ei-title">${H(e.dest||e.loc||'Onbekend')}</div>
-          <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}</div>
+          <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${e.departure==='office'?' · 🏢':e.departure==='home'?' · 🏠':''}</div>
           <div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             ${statusBadge(e.status)}
             ${e.status==='pending'?`<button class="btn btn-sm" style="padding:3px 8px;background:var(--red-lt);color:var(--red);font-size:11px;border:none;cursor:pointer;border-radius:5px;font-weight:600" data-del-ent="${e.id}">Verwijderen</button>`:''}
@@ -589,7 +636,7 @@ function adminEnts(){
           <div class="ei-ic ${isPark?'park':'trip'}">${isPark?'🅿️':'🚗'}</div>
           <div class="ei-cnt">
             <div class="ei-title">${H(e.dest||e.loc||'Onbekend')}</div>
-            <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${ds&&!isPark?' · '+ds.icon+' '+ds.title:''}</div>
+            <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${e.departure==='office'?' · 🏢 Vanaf kantoor':e.departure==='home'?' · 🏠 Vanaf thuis':''}${ds&&!isPark?' · '+ds.icon+' '+ds.title:''}</div>
             ${e.notes?`<div style="font-size:12px;color:var(--g500)">${H(e.notes)}</div>`:''}
             <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
               ${statusBadge(e.status)}
@@ -621,10 +668,11 @@ function adminUsers(){
   return`<div style="padding-bottom:80px">
     <div class="sh"><div class="sh-t">Medewerkers (${users.length})</div><button class="btn btn-sm btn-p" id="btn-add-usr">${I.plus} Toevoegen</button></div>
     <div class="tw"><table>
-      <thead><tr><th>Naam</th><th>E-mail</th><th>Woon-werk km</th><th>Contractdagen</th><th>Rol</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Naam</th><th>E-mail</th><th>Thuisadres</th><th>WW-km</th><th>Contractdagen</th><th>Rol</th><th>Status</th><th></th></tr></thead>
       <tbody>${users.map(u=>`<tr>
         <td><strong>${H(u.name)}</strong></td>
         <td style="color:var(--g500);font-size:13px">${H(u.email)}</td>
+        <td style="font-size:12px;color:var(--g600)">${H(u.homeAddress||'—')}</td>
         <td>${u.homeKm||0} km</td>
         <td style="font-size:13px">${(u.contractDays||[]).map(d=>DAY_NAMES[d]+'ag').join(', ')||'—'}</td>
         <td><span class="chip">${u.role==='admin'?'Beheerder':'Medewerker'}</span></td>
@@ -670,6 +718,11 @@ function userModal(uid){
       <div class="fg"><label class="fl">${u?'Nieuw wachtwoord (leeg = ongewijzigd)':'Wachtwoord'}</label><input class="fi" type="password" id="m-pw" placeholder="${u?'Ongewijzigd laten':'Kies een wachtwoord'}"></div>
       <div style="height:1px;background:var(--g100);margin:14px 0"></div>
       <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--g800)">🏠 Woon-werk instellingen</div>
+      <div class="fg">
+        <label class="fl">Thuisadres <span style="color:var(--g400);font-weight:400">(voor automatische routeberekening)</span></label>
+        <input class="fi" type="text" id="m-homeaddr" placeholder="bijv. Julianastraat 10, 2712AA Zoetermeer" value="${H(u?.homeAddress||'')}">
+        <div class="fhint">Medewerkers gebruiken dit om automatisch km te berekenen vanuit huis.</div>
+      </div>
       <div class="fg">
         <label class="fl">Woon-werk km per dag</label>
         <input class="fi" type="number" id="m-hkm" value="${u?.homeKm||0}" min="0" step="1">
@@ -744,6 +797,87 @@ function exportCSV(month){
   a.click();URL.revokeObjectURL(a.href);toast('CSV gedownload 📥','ok');
 }
 
+// ─── ROUTE CALCULATION (OpenStreetMap + OSRM) ────────────────
+async function geocodeAddress(address){
+  const url='https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(address)+'&format=json&limit=1&countrycodes=nl,be';
+  const resp=await fetch(url,{headers:{'Accept-Language':'nl','User-Agent':'ThinkAV-KM/1.0'}});
+  if(!resp.ok)throw new Error('Geocoding niet beschikbaar');
+  const data=await resp.json();
+  if(!data.length)throw new Error('Adres niet gevonden: "'+address+'"');
+  return{lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};
+}
+
+async function getRouteKm(a,b){
+  const url='https://router.project-osrm.org/route/v1/driving/'+a.lng+','+a.lat+';'+b.lng+','+b.lat+'?overview=false';
+  const resp=await fetch(url);
+  if(!resp.ok)throw new Error('Route service niet beschikbaar');
+  const data=await resp.json();
+  if(data.code!=='Ok'||!data.routes.length)throw new Error('Geen route gevonden');
+  return data.routes[0].distance/1000;
+}
+
+async function handleCalcRoute(){
+  const btn=document.getElementById('btn-calc-route');
+  const resultEl=document.getElementById('route-result');
+  const errorEl=document.getElementById('route-error');
+  const addr=document.getElementById('t-addr').value.trim();
+  if(!addr){toast('Vul een bestemmingsadres in','err');return}
+  const departure=document.querySelector('input[name="departure"]:checked')?.value||'home';
+  const u=DB.users().find(x=>x.id===S.user.id);
+  let originAddr;
+  if(departure==='home'){
+    if(!u?.homeAddress){toast('Thuisadres is niet ingesteld — vraag de beheerder dit in te stellen','err');return}
+    originAddr=u.homeAddress;
+  }else{originAddr=OFFICE_ADDR}
+  const origBtn=btn.innerHTML;
+  btn.textContent='⏳ Berekenen...';btn.disabled=true;
+  if(resultEl)resultEl.style.display='none';
+  if(errorEl)errorEl.style.display='none';
+  try{
+    const[org,dst]=await Promise.all([geocodeAddress(originAddr),geocodeAddress(addr+', Nederland')]);
+    const oneWay=await getRouteKm(org,dst);
+    const rt=Math.round(oneWay*2*10)/10;
+    document.getElementById('t-km').value=rt;
+    if(resultEl){resultEl.className='route-ok';resultEl.innerHTML='✅ Route berekend: <strong>'+oneWay.toFixed(1)+' km</strong> enkele reis → <strong>'+rt+' km</strong> retour (automatisch ingevuld)';resultEl.style.display='block';}
+    const destFld=document.getElementById('t-dest');
+    if(destFld&&!destFld.value)destFld.value=addr;
+    toast('Route berekend! 🗺️','ok');
+  }catch(err){
+    if(errorEl){errorEl.style.cssText='display:block;margin-top:6px;font-size:12px;color:var(--red)';errorEl.textContent='❌ '+err.message;}
+    toast(err.message,'err');
+  }finally{btn.innerHTML=origBtn;btn.disabled=false;}
+}
+
+function applyDeparture(departure,date){
+  const u=DB.users().find(x=>x.id===S.user.id);
+  const hkm=parseFloat(u?.homeKm||0);
+  document.querySelectorAll('.dep-opt').forEach(el=>el.classList.toggle('sel',el.querySelector('input')?.value===departure));
+  const ded=document.getElementById('t-ded');
+  const dedWrap=document.getElementById('deduct-wrap')?.querySelector('.tog');
+  const banner=document.getElementById('day-banner');
+  const dedTitle=document.getElementById('ded-title');
+  const dedSub=document.getElementById('ded-sub');
+  if(!ded)return;
+  if(departure==='office'){
+    ded.checked=false;ded.disabled=true;
+    if(dedWrap){dedWrap.style.opacity='0.5';dedWrap.style.background='var(--g100)';}
+    if(dedTitle)dedTitle.textContent='Woon-werk aftrek n.v.t.';
+    if(dedSub)dedSub.textContent='Je vertrekt al vanaf kantoor — volledige vergoeding';
+    if(banner)banner.className='day-banner';
+  }else{
+    ded.disabled=false;
+    if(hkm>0){
+      const ds=getDayStatus(date,u);
+      ded.checked=ds?.type==='contract';
+      if(dedWrap){dedWrap.style.opacity='1';dedWrap.style.background=ded.checked?'var(--p-lt)':'var(--green-lt)';}
+      if(banner){banner.className='day-banner '+(ds?'show ':'')+(ds?.type||'');
+        if(ds){document.getElementById('day-banner-icon').textContent=ds.icon;document.getElementById('day-banner-title').textContent=ds.title;document.getElementById('day-banner-sub').textContent=ds.sub;}}
+      if(dedTitle)dedTitle.textContent=ded.checked?'Woon-werk aftrek toepassen':'Volledige vergoeding (geen aftrek)';
+      if(dedSub)dedSub.textContent=ded.checked?`${hkm} km woon-werk wordt afgetrokken`:'Geen contractdag — je ontvangt volledige vergoeding';
+    }
+  }
+}
+
 // ─── EVENT BINDING ───────────────────────────────────────────
 function bind(){
   document.getElementById('btn-login')?.addEventListener('click',doLogin);
@@ -762,10 +896,19 @@ function bind(){
 
   // Trip form
   document.getElementById('btn-save-trip')?.addEventListener('click',doSaveTrip);
+  document.getElementById('btn-calc-route')?.addEventListener('click',handleCalcRoute);
+  document.querySelectorAll('input[name="departure"]').forEach(el=>el.addEventListener('change',function(){
+    applyDeparture(this.value,document.getElementById('t-date')?.value||today());
+  }));
+  document.querySelectorAll('.dep-opt').forEach(el=>el.addEventListener('click',function(){
+    const radio=this.querySelector('input[type=radio]');if(radio){radio.checked=true;applyDeparture(radio.value,document.getElementById('t-date')?.value||today());}
+  }));
   document.getElementById('btn-cancel-ed')?.addEventListener('click',()=>{S.editEntry=null;go('emp-hist')});
   const ded=document.getElementById('t-ded');
   if(ded){const inf=document.getElementById('ded-info');const upd=()=>inf&&inf.classList.toggle('show',ded.checked);ded.addEventListener('change',upd);upd()}
   document.getElementById('t-date')?.addEventListener('change',function(){
+    const dep=document.querySelector('input[name="departure"]:checked')?.value||'home';
+    applyDeparture(dep,this.value);
     const u=DB.users().find(x=>x.id===S.user.id);
     const ds=getDayStatus(this.value,u);
     const banner=document.getElementById('day-banner');
@@ -874,6 +1017,8 @@ function doSaveTrip(){
   const proj=document.getElementById('t-proj').value.trim();
   const kmTot=parseFloat(document.getElementById('t-km').value);
   const dedcut=document.getElementById('t-ded')?.checked||false;
+  const departure=document.querySelector('input[name="departure"]:checked')?.value||'home';
+  const addr=document.getElementById('t-addr')?.value.trim()||'';
   const notes=document.getElementById('t-notes').value.trim();
   if(!date){toast('Vul een datum in','err');return}
   if(!dest){toast('Vul een bestemming in','err');return}
@@ -882,9 +1027,9 @@ function doSaveTrip(){
   const ents=DB.entries();
   if(S.editEntry){
     const i=ents.findIndex(e=>e.id===S.editEntry.id);
-    if(i>=0)ents[i]={...ents[i],date,dest,proj,kmTot,dedcut,notes,upd:new Date().toISOString()};
+    if(i>=0)ents[i]={...ents[i],date,dest,proj,addr,departure,kmTot,dedcut,notes,upd:new Date().toISOString()};
   }else{
-    ents.push({id:DB.uid(),uid:S.user.id,type:'trip',date,dest,proj,kmTot,dedcut,notes,status:'pending',cre:new Date().toISOString()});
+    ents.push({id:DB.uid(),uid:S.user.id,type:'trip',date,dest,proj,addr,departure,kmTot,dedcut,notes,status:'pending',cre:new Date().toISOString()});
   }
   DB.saveEntries(ents);S.editEntry=null;toast('Rit opgeslagen! 🚗','ok');go('emp-home');
 }
@@ -916,6 +1061,7 @@ function doSaveUser(){
   const email=document.getElementById('m-email').value.trim().toLowerCase();
   const pw=document.getElementById('m-pw').value;
   const homeKm=parseFloat(document.getElementById('m-hkm').value)||0;
+  const homeAddress=document.getElementById('m-homeaddr')?.value.trim()||'';
   const contractDays=[...document.querySelectorAll('input[name="cday"]:checked')].map(x=>parseInt(x.value));
   const role=document.getElementById('m-role').value;
   const active=document.getElementById('m-active')?.value!=='0';
@@ -924,11 +1070,11 @@ function doSaveUser(){
   const users=DB.users();
   if(uid){
     const i=users.findIndex(u=>u.id===uid);
-    if(i>=0)users[i]={...users[i],name,email,homeKm,contractDays,role,active,...(pw?{password:pw}:{})};
+    if(i>=0)users[i]={...users[i],name,email,homeKm,homeAddress,contractDays,role,active,...(pw?{password:pw}:{})};
   }else{
     if(!pw){toast('Wachtwoord is verplicht','err');return}
     if(users.find(u=>u.email===email)){toast('E-mailadres al in gebruik','err');return}
-    users.push({id:DB.uid(),name,email,password:pw,homeKm,contractDays,role,active:true});
+    users.push({id:DB.uid(),name,email,password:pw,homeKm,homeAddress,contractDays,role,active:true});
   }
   DB.saveUsers(users);document.getElementById('modal-ct').innerHTML='';toast('Opgeslagen! ✅','ok');draw();
 }
