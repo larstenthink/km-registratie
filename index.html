@@ -932,13 +932,7 @@ function bind(){
   document.querySelectorAll('[data-period]').forEach(el=>el.addEventListener('click',()=>{S.entPeriod=el.dataset.period;draw()}));
   document.querySelectorAll('[data-type-filter]').forEach(el=>el.addEventListener('click',()=>{S.typeFilter=el.dataset.typeFilter;draw()}));
 
-  // Collapse/expand employee blocks
-  document.querySelectorAll('[data-collapse-user]').forEach(el=>el.addEventListener('click',function(ev){
-    if(ev.target.closest('[data-batch-user]'))return;
-    const uid=this.dataset.collapseUser;
-    S.collapsed[uid]=!S.collapsed[uid];
-    draw();
-  }));
+  // Collapse/expand: event delegation handled via #app listener (see initApp)
 
   // Trip form
   document.getElementById('btn-save-trip')?.addEventListener('click',doSaveTrip);
@@ -1011,13 +1005,7 @@ function bind(){
   document.querySelectorAll('[data-period]').forEach(el=>el.addEventListener('click',()=>{S.entPeriod=el.dataset.period;draw()}));
   document.querySelectorAll('[data-type-filter]').forEach(el=>el.addEventListener('click',()=>{S.typeFilter=el.dataset.typeFilter;draw()}));
 
-  // Collapse/expand employee blocks
-  document.querySelectorAll('[data-collapse-user]').forEach(el=>el.addEventListener('click',function(ev){
-    if(ev.target.closest('[data-batch-user]'))return;
-    const uid=this.dataset.collapseUser;
-    S.collapsed[uid]=!S.collapsed[uid];
-    draw();
-  }));
+  // Collapse/expand: event delegation handled via #app listener (see initApp)
   document.querySelectorAll('[data-batch-user]').forEach(el=>el.addEventListener('click',()=>{
     const c=document.getElementById('modal-ct');c.innerHTML=batchReimModal(el.dataset.batchUser);
     bindMo();
@@ -1152,6 +1140,20 @@ function compressImage(dataURL){
     img.src=dataURL;
   });
 }
+
+// ─── PERSISTENT EVENT DELEGATION ────────────────────────────────────────
+document.getElementById('app').addEventListener('click',function(ev){
+  // Collapse/expand employee blocks — works even after draw() re-renders DOM
+  const hdr=ev.target.closest('[data-collapse-user]');
+  if(hdr){
+    const skip=ev.target.closest('[data-batch-user],[data-reim],[data-unreim],[data-adm-del],[data-view-rec]');
+    if(!skip){
+      const uid=hdr.dataset.collapseUser;
+      S.collapsed[uid]=!S.collapsed[uid];
+      draw();
+    }
+  }
+});
 
 // ─── APP INIT ────────────────────────────────────────────────
 async function initApp(){
