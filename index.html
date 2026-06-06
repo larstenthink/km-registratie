@@ -76,10 +76,6 @@ body.adm #app{max-width:960px}
 .ferr{font-size:12px;color:var(--red);margin-top:4px}
 
 /* DAY PICKER */
-.day-picker{display:flex;gap:7px;margin-top:6px;flex-wrap:wrap}
-.day-chip input[type=checkbox]{display:none}
-.day-chip span{display:block;padding:8px 12px;border-radius:8px;border:1.5px solid var(--g200);font-size:13px;font-weight:700;color:var(--g500);cursor:pointer;transition:all .15s;min-width:38px;text-align:center}
-.day-chip input:checked+span{background:var(--p);border-color:var(--p);color:#fff}
 
 /* TOGGLE ROW */
 .tog{display:flex;align-items:flex-start;gap:12px;padding:14px;background:var(--p-lt);border-radius:var(--r-sm);border:1.5px solid rgb(84 43 123/.2);cursor:pointer;margin-bottom:14px}
@@ -298,18 +294,7 @@ function months(){
 }
 
 // ─── WOON-WERK DAY LOGIC ─────────────────────────────────────
-const DAY_NAMES=['zo','ma','di','wo','do','vr','za'];
-function getDayStatus(dateStr,user){
-  if(!dateStr)return null;
-  const d=new Date(dateStr+'T12:00:00');const dow=d.getDay();
-  const isWeekend=(dow===0||dow===6);
-  const contractDays=user?.contractDays||[1,2,3,4,5];
-  const homeKm=parseFloat(user?.homeKm||0);
-  if(homeKm<=0)return null;
-  if(isWeekend)return{type:'free',icon:'🎉',title:'Weekend',sub:`Zaterdag/zondag — volledige vergoeding`};
-  if(!contractDays.includes(dow))return{type:'free',icon:'⭐',title:'Extra dag (niet in contract)',sub:`${DAY_NAMES[dow]}ag valt buiten standaard werkdagen — volledige vergoeding`};
-  return{type:'contract',icon:'📅',title:'Contractdag',sub:`${DAY_NAMES[dow]}ag is een werkdag — woon-werk km (${homeKm} km) worden afgetrokken`};
-}
+
 
 function calcEntry(e,users){
   if(e.type==='park')return{kmNet:0,amt:parseFloat(e.parkAmt)||0};
@@ -362,7 +347,6 @@ function empHome(){
   me.forEach(e=>{const c=calcEntry(e,users);if(e.type==='park')tpark+=c.amt;else tkm+=c.kmNet});
   const pend=ents.filter(e=>e.status==='pending').sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
   const u=users.find(x=>x.id===S.user.id);
-  const cdays=(u?.contractDays||[]).map(d=>DAY_NAMES[d]+'ag').join(', ');
   return`<div class="page">
     <div class="hdr">
       <div>
@@ -392,7 +376,7 @@ function entItem(e,users){
     <div class="ei-ic ${isPark?'park':'trip'}">${isPark?'🅿️':'🚗'}</div>
     <div class="ei-cnt">
       <div class="ei-title">${H(e.dest||e.loc||'Onbekend')}</div>
-      <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${e.departure==='office'?' · 🏢':e.departure==='home'?' · 🏠':''}</div>
+      <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}</div>
       <div style="margin-top:4px">${statusBadge(e.status)}</div>
     </div>
     <div class="ei-r">
@@ -530,7 +514,7 @@ function empHist(){
         <div class="ei-ic ${e.type==='park'?'park':'trip'}">${e.type==='park'?'🅿️':'🚗'}</div>
         <div class="ei-cnt" style="flex:1;min-width:120px">
           <div class="ei-title">${H(e.dest||e.loc||'Onbekend')}</div>
-          <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${e.departure==='office'?' · 🏢':e.departure==='home'?' · 🏠':''}</div>
+          <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}</div>
           <div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             ${statusBadge(e.status)}
             ${e.status==='pending'?`<button class="btn btn-sm" style="padding:3px 8px;background:var(--red-lt);color:var(--red);font-size:11px;border:none;cursor:pointer;border-radius:5px;font-weight:600" data-del-ent="${e.id}">Verwijderen</button>`:''}
@@ -625,12 +609,11 @@ function adminEnts(){
       </div>
       <div class="emp-block-ents">${ue.map(e=>{
         const c=calcEntry(e,[u]);const isPark=e.type==='park';
-        const ds=getDayStatus(e.date,u);
         return`<div class="ei" style="margin:0;border-radius:0;border-bottom:1px solid var(--g100);${e.status==='reimbursed'?'opacity:.55':''}">
           <div class="ei-ic ${isPark?'park':'trip'}">${isPark?'🅿️':'🚗'}</div>
           <div class="ei-cnt">
             <div class="ei-title">${H(e.dest||e.loc||'Onbekend')}</div>
-            <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${e.departure==='office'?' · 🏢 Vanaf kantoor':e.departure==='home'?' · 🏠 Vanaf thuis':''}${ds&&!isPark?' · '+ds.icon+' '+ds.title:''}</div>
+            <div class="ei-meta">${fmtDate(e.date)}${e.proj?' · <strong>'+H(e.proj)+'</strong>':''}${e.departure==='office'?' · 🏢 Vanaf kantoor':e.departure==='home'?' · 🏠 Vanaf thuis':''}</div>
             ${e.notes?`<div style="font-size:12px;color:var(--g500)">${H(e.notes)}</div>`:''}
             <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
               ${statusBadge(e.status)}
@@ -663,21 +646,17 @@ function adminUsers(){
   return`<div style="padding-bottom:80px">
     <div class="sh"><div class="sh-t">Medewerkers (${users.length})</div><button class="btn btn-sm btn-p" id="btn-add-usr">${I.plus} Toevoegen</button></div>
     <div class="tw"><table>
-      <thead><tr><th>Naam</th><th>E-mail</th><th>Thuisadres</th><th>WW-km</th><th>Contractdagen</th><th>Rol</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Naam</th><th>E-mail</th><th>Thuisadres</th><th>WW-km</th><th>Rol</th><th>Status</th><th></th></tr></thead>
       <tbody>${users.map(u=>`<tr>
         <td><strong>${H(u.name)}</strong></td>
         <td style="color:var(--g500);font-size:13px">${H(u.email)}</td>
         <td style="font-size:12px;color:var(--g600)">${H(u.homeAddress||'—')}</td>
         <td>${u.homeKm||0} km</td>
-        <td style="font-size:13px">${(u.contractDays||[]).map(d=>DAY_NAMES[d]+'ag').join(', ')||'—'}</td>
         <td><span class="chip">${u.role==='admin'?'Beheerder':'Medewerker'}</span></td>
         <td><span class="badge ${u.active?'b-appr':'b-reim'}">${u.active?'Actief':'Inactief'}</span></td>
         <td style="text-align:right"><button class="btn-ic" data-ed-usr="${u.id}">${I.ed}</button></td>
       </tr>`).join('')}</tbody>
     </table></div>
-    <div style="margin:14px 14px 0;padding:14px;background:var(--p-lt);border-radius:12px;font-size:13px;color:var(--p-dk)">
-      💡 Stel per medewerker contractdagen in. Op die dagen wordt woon-werk km automatisch afgetrokken. Op extra dagen en weekenden: volledige vergoeding.
-    </div>
   </div>`;
 }
 
@@ -703,8 +682,6 @@ function adminSett(){
 // ─── MODALS ──────────────────────────────────────────────────
 function userModal(uid){
   const u=uid?DB.users().find(x=>x.id===uid):null;
-  const cdays=u?.contractDays||[1,2,3,4,5];
-  const dayLabels=[{v:1,l:'ma'},{v:2,l:'di'},{v:3,l:'wo'},{v:4,l:'do'},{v:5,l:'vr'}];
   return`<div class="mo-ov" id="mo-ov">
     <div class="mo">
       <div class="mo-hdr"><div class="mo-title">${u?'Medewerker bewerken':'Medewerker toevoegen'}</div><button class="btn-ic" id="btn-close-mo">✕</button></div>
@@ -721,13 +698,9 @@ function userModal(uid){
       <div class="fg">
         <label class="fl">Woon-werk km per dag</label>
         <input class="fi" type="number" id="m-hkm" value="${u?.homeKm||0}" min="0" step="1">
-        <div class="fhint">Wordt afgetrokken op contractdagen als medewerker rechtstreeks van huis rijdt.</div>
+        <div class="fhint">Wordt afgetrokken als de medewerker aangeeft woon-werk km te willen aftrekken.</div>
       </div>
-      <div class="fg">
-        <label class="fl">Contractdagen</label>
-        <div class="day-picker">${dayLabels.map(d=>`<label class="day-chip"><input type="checkbox" name="cday" value="${d.v}" ${cdays.includes(d.v)?'checked':''}><span>${d.l}</span></label>`).join('')}</div>
-        <div class="fhint">Op geselecteerde dagen wordt woon-werk km afgetrokken. Op andere dagen: volledige vergoeding.</div>
-      </div>
+
       <div style="height:1px;background:var(--g100);margin:14px 0"></div>
       <div class="fg"><label class="fl">Rol</label><select class="fsel" id="m-role"><option value="employee" ${(!u||u.role==='employee')?'selected':''}>Medewerker</option><option value="admin" ${u?.role==='admin'?'selected':''}>Beheerder</option></select></div>
       ${u?`<div class="fg"><label class="fl">Status</label><select class="fsel" id="m-active"><option value="1" ${u.active?'selected':''}>Actief</option><option value="0" ${!u.active?'selected':''}>Inactief</option></select></div>`:''}
@@ -778,11 +751,10 @@ function receiptModal(eid){
 // ─── CSV EXPORT ──────────────────────────────────────────────
 function exportCSV(month){
   const users=DB.users();const ents=DB.entries().filter(e=>e.date.startsWith(month));
-  const rows=[['Datum','Medewerker','Type','Dagsoort','Omschrijving','Project','Totaal km','Woon-werk aftrek','Netto km','Bedrag (€)','Status']];
+  const rows=[['Datum','Medewerker','Type','Omschrijving','Project','Totaal km','Woon-werk aftrek','Netto km','Bedrag (€)','Status']];
   ents.forEach(e=>{
     const u=users.find(x=>x.id===e.uid);const c=calcEntry(e,users);
-    const ds=getDayStatus(e.date,u);
-    rows.push([e.date,u?.name||'',e.type==='park'?'Parkeren':'Rit',ds?ds.title:'',e.dest||e.loc||'',e.proj||'',
+    rows.push([e.date,u?.name||'',e.type==='park'?'Parkeren':'Rit',e.dest||e.loc||'',e.proj||'',
       e.type==='park'?'':e.kmTot||'',e.type==='park'?'':(e.dedcut?u?.homeKm||0:0),
       e.type==='park'?'':c.kmNet.toFixed(1),c.amt.toFixed(2).replace('.',','),statusLabel(e.status)]);
   });
@@ -897,8 +869,6 @@ function bind(){
     const dep=document.querySelector('input[name="departure"]:checked')?.value||'home';
     
     const u=DB.users().find(x=>x.id===S.user.id);
-    const ds=getDayStatus(this.value,u);
-    const banner=document.getElementById('day-banner');
     const ded=document.getElementById('t-ded');
     const hkm=parseFloat(u?.homeKm||0);
     if(banner){banner.className='day-banner '+( ds?'show ':'')+(ds?.type||'');
@@ -1049,7 +1019,6 @@ function doSaveUser(){
   const pw=document.getElementById('m-pw').value;
   const homeKm=parseFloat(document.getElementById('m-hkm').value)||0;
   const homeAddress=document.getElementById('m-homeaddr')?.value.trim()||'';
-  const contractDays=[...document.querySelectorAll('input[name="cday"]:checked')].map(x=>parseInt(x.value));
   const role=document.getElementById('m-role').value;
   const active=document.getElementById('m-active')?.value!=='0';
   if(!name){toast('Naam is verplicht','err');return}
@@ -1057,11 +1026,11 @@ function doSaveUser(){
   const users=DB.users();
   if(uid){
     const i=users.findIndex(u=>u.id===uid);
-    if(i>=0)users[i]={...users[i],name,email,homeKm,homeAddress,contractDays,role,active,...(pw?{password:pw}:{})};
+    if(i>=0)users[i]={...users[i],name,email,homeKm,homeAddress,role,active,...(pw?{password:pw}:{})};
   }else{
     if(!pw){toast('Wachtwoord is verplicht','err');return}
     if(users.find(u=>u.email===email)){toast('E-mailadres al in gebruik','err');return}
-    users.push({id:DB.uid(),name,email,password:pw,homeKm,homeAddress,contractDays,role,active:true});
+    users.push({id:DB.uid(),name,email,password:pw,homeKm,homeAddress,role,active:true});
   }
   DB.saveUsers(users);document.getElementById('modal-ct').innerHTML='';toast('Opgeslagen! ✅','ok');draw();
 }
@@ -1092,7 +1061,7 @@ async function initApp(){
       if(d.settings)CACHE.settings=d.settings;
     }
     if(!CACHE.users.length){
-      const adm={id:'usr_adm',name:'Beheerder',email:'admin@think-av.nl',password:'admin123',role:'admin',homeKm:0,contractDays:[1,2,3,4,5],active:true};
+      const adm={id:'usr_adm',name:'Beheerder',email:'admin@think-av.nl',password:'admin123',role:'admin',homeKm:0,active:true};
       CACHE.users=[adm];fbW('users/usr_adm',adm);
     }
     CACHE.ready=true;
