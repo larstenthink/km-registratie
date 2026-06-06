@@ -403,13 +403,12 @@ function entItem(e,users){
 }
 
 function empAddTrip(){
-  const u=DB.users().find(x=>x.id===S.user.id);
+  const u=DB.users().find(x=>x.id===S.user.id)||S.user;
   const hkm=parseFloat(u?.homeKm||0);const ed=S.editEntry;
   const initDate=ed?.date||today();
   const initDep=ed?.departure||'home';
-  const initStatus=initDep==='office'?null:getDayStatus(initDate,u);
-  const initDedcut=ed?ed.dedcut:(initDep==='office'?false:initStatus?.type==='contract');
-  const hasAddr=!!u?.homeAddress;
+  const initDedcut=ed!==null&&ed!==undefined?ed.dedcut:(initDep==='home'&&hkm>0);
+  const hasAddr=!!(u?.homeAddress);
   return`<div class="page">
     <div class="hdr">
       <button class="btn-ic" data-nav="emp-home">${I.back}</button>
@@ -456,16 +455,12 @@ function empAddTrip(){
         <div class="fhint">Klik op 📍 Berekenen voor automatische berekening, of voer handmatig in.</div>
       </div>
 
-      ${hkm>0?`<div class="day-banner ${initStatus&&initDep==='home'?'show':''} ${initStatus?.type||''}" id="day-banner">
-        <div class="day-banner-icon" id="day-banner-icon">${initStatus?.icon||''}</div>
-        <div class="day-banner-txt"><strong id="day-banner-title">${initStatus?.title||''}</strong><span id="day-banner-sub">${initStatus?.sub||''}</span></div>
-      </div>
-      <div id="deduct-wrap">
+      ${hkm>0?`<div id="deduct-wrap">
         <label class="tog" for="t-ded" style="${initDep==='office'?'opacity:.5;background:var(--g100)':''}">
           <input type="checkbox" id="t-ded" ${initDedcut?'checked':''} ${initDep==='office'?'disabled':''}>
           <div class="tog-lbl">
-            <strong id="ded-title">${initDep==='office'?'Woon-werk aftrek n.v.t.':initStatus?.type==='free'?'Volledige vergoeding':'Woon-werk aftrek toepassen'}</strong>
-            <span id="ded-sub">${initDep==='office'?'Je vertrekt al vanaf kantoor':`${hkm} km woon-werk wordt afgetrokken op contractdagen`}</span>
+            <strong id="ded-title">${initDep==='office'?'Woon-werk aftrek n.v.t.':'Woon-werk km aftrekken van totaal'}</strong>
+            <span id="ded-sub">${initDep==='office'?'Je vertrekt al vanaf kantoor':`${hkm} km wordt afgetrokken van het totaal gereden km`}</span>
           </div>
         </label>
       </div>`:''}
@@ -639,6 +634,7 @@ function adminEnts(){
             ${e.notes?`<div style="font-size:12px;color:var(--g500)">${H(e.notes)}</div>`:''}
             <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
               ${statusBadge(e.status)}
+              ${!isPark?(e.dedcut?'<span class="badge" style="background:#dcfce7;color:#166534">✓ woon-werk afgetrokken</span>':'<span class="badge" style="background:var(--g100);color:var(--g500)">• geen woon-werk aftrek</span>'):''}
               ${e.status==='pending'?`<button class="btn btn-sm btn-g" data-reim="${e.id}">${I.chk} Vergoeden</button>`:''}
               ${e.status==='reimbursed'?`<button class="btn btn-sm btn-gh" style="color:var(--amber)" data-unreim="${e.id}">↩ Ongedaan</button>`:''}
               ${isPark&&e.receipt?`<button class="btn btn-sm btn-gh" data-view-rec="${e.id}">${I.eye} Bon</button>`:''}
@@ -647,7 +643,7 @@ function adminEnts(){
           </div>
           <div class="ei-r" style="align-self:flex-start">
             ${isPark?`<div class="ei-amt">${fmtEur(c.amt)}</div>`
-            :`<div class="ei-amt">${c.kmNet.toFixed(1)} km</div><div class="ei-km">${fmtEur(c.amt)}</div>${e.dedcut?'<div style="font-size:11px;color:var(--p)">− woon-werk</div>':''}`}
+            :`<div class="ei-amt">${c.kmNet.toFixed(1)} km</div><div class="ei-km">${fmtEur(c.amt)}</div>${e.dedcut?`<div style="font-size:11px;color:#166534;font-weight:600">− ${parseFloat(DB.users().find(x=>x.id===e.uid)?.homeKm||0)} km woon-werk</div>`:'<div style="font-size:11px;color:var(--g400)">vol km</div>'}`}
           </div>
         </div>`;
       }).join('')}</div>
@@ -847,13 +843,12 @@ async function handleCalcRoute(){
   }finally{btn.innerHTML=origBtn;btn.disabled=false;}
 }
 
-function applyDeparture(departure,date){
-  const u=DB.users().find(x=>x.id===S.user.id);
+function applyDeparture(departure){
+  const u=DB.users().find(x=>x.id===S.user.id)||S.user;
   const hkm=parseFloat(u?.homeKm||0);
   document.querySelectorAll('.dep-opt').forEach(el=>el.classList.toggle('sel',el.querySelector('input')?.value===departure));
   const ded=document.getElementById('t-ded');
   const dedWrap=document.getElementById('deduct-wrap')?.querySelector('.tog');
-  const banner=document.getElementById('day-banner');
   const dedTitle=document.getElementById('ded-title');
   const dedSub=document.getElementById('ded-sub');
   if(!ded)return;
@@ -861,19 +856,12 @@ function applyDeparture(departure,date){
     ded.checked=false;ded.disabled=true;
     if(dedWrap){dedWrap.style.opacity='0.5';dedWrap.style.background='var(--g100)';}
     if(dedTitle)dedTitle.textContent='Woon-werk aftrek n.v.t.';
-    if(dedSub)dedSub.textContent='Je vertrekt al vanaf kantoor — volledige vergoeding';
-    if(banner)banner.className='day-banner';
+    if(dedSub)dedSub.textContent='Je vertrekt al vanaf kantoor';
   }else{
     ded.disabled=false;
-    if(hkm>0){
-      const ds=getDayStatus(date,u);
-      ded.checked=ds?.type==='contract';
-      if(dedWrap){dedWrap.style.opacity='1';dedWrap.style.background=ded.checked?'var(--p-lt)':'var(--green-lt)';}
-      if(banner){banner.className='day-banner '+(ds?'show ':'')+(ds?.type||'');
-        if(ds){document.getElementById('day-banner-icon').textContent=ds.icon;document.getElementById('day-banner-title').textContent=ds.title;document.getElementById('day-banner-sub').textContent=ds.sub;}}
-      if(dedTitle)dedTitle.textContent=ded.checked?'Woon-werk aftrek toepassen':'Volledige vergoeding (geen aftrek)';
-      if(dedSub)dedSub.textContent=ded.checked?`${hkm} km woon-werk wordt afgetrokken`:'Geen contractdag — je ontvangt volledige vergoeding';
-    }
+    if(dedWrap){dedWrap.style.opacity='1';dedWrap.style.background='var(--p-lt)';}
+    if(dedTitle)dedTitle.textContent='Woon-werk km aftrekken van totaal';
+    if(dedSub)dedSub.textContent=`${hkm} km wordt afgetrokken van het totaal gereden km`;
   }
 }
 
@@ -897,17 +885,17 @@ function bind(){
   document.getElementById('btn-save-trip')?.addEventListener('click',doSaveTrip);
   document.getElementById('btn-calc-route')?.addEventListener('click',handleCalcRoute);
   document.querySelectorAll('input[name="departure"]').forEach(el=>el.addEventListener('change',function(){
-    applyDeparture(this.value,document.getElementById('t-date')?.value||today());
+    applyDeparture(this.value);
   }));
   document.querySelectorAll('.dep-opt').forEach(el=>el.addEventListener('click',function(){
-    const radio=this.querySelector('input[type=radio]');if(radio){radio.checked=true;applyDeparture(radio.value,document.getElementById('t-date')?.value||today());}
+    const radio=this.querySelector('input[type=radio]');if(radio){radio.checked=true;applyDeparture(radio.value);}
   }));
   document.getElementById('btn-cancel-ed')?.addEventListener('click',()=>{S.editEntry=null;go('emp-hist')});
   const ded=document.getElementById('t-ded');
   if(ded){const inf=document.getElementById('ded-info');const upd=()=>inf&&inf.classList.toggle('show',ded.checked);ded.addEventListener('change',upd);upd()}
   document.getElementById('t-date')?.addEventListener('change',function(){
     const dep=document.querySelector('input[name="departure"]:checked')?.value||'home';
-    applyDeparture(dep,this.value);
+    
     const u=DB.users().find(x=>x.id===S.user.id);
     const ds=getDayStatus(this.value,u);
     const banner=document.getElementById('day-banner');
@@ -1114,7 +1102,7 @@ async function initApp(){
     });
     onValue(ref(fbDb,'users'),snap=>{
       if(snap.exists())CACHE.users=Object.values(snap.val());
-      if(S.user){const fresh=CACHE.users.find(u=>u.id===S.user.id&&u.active!==false);if(fresh)S.user=fresh;}
+      if(S.user){const fresh=CACHE.users.find(u=>u.id===S.user.id&&u.active!==false);if(fresh){S.user=fresh;DB.setSession(fresh);}}
     });
     const saved=DB.session();
     if(saved){
