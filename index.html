@@ -434,10 +434,17 @@ function empAddTrip(){
       <div class="fg"><label class="fl">Bestemming / omschrijving</label><input class="fi" type="text" id="t-dest" placeholder="bijv. Klant Amsterdam" value="${H(ed?.dest||'')}"></div>
       <div class="fg"><label class="fl">Project / klant</label><input class="fi" type="text" id="t-proj" placeholder="bijv. Projectnaam" value="${H(ed?.proj||'')}"></div>
       <div class="fg">
-        <label class="fl">Totaal gereden kilometers <span style="color:var(--g500);font-weight:400;font-size:12px">(heen + terug)</span></label>
+        <label class="fl">Totaal gereden kilometers</label>
         <input class="fi" type="number" id="t-km" placeholder="0" min="0" step="0.5" value="${ed?.kmTot||''}">
         <div class="fhint">Klik op 📍 Berekenen voor automatische berekening, of voer handmatig in.</div>
       </div>
+      <label class="tog" for="t-retour" style="margin-bottom:14px">
+        <input type="checkbox" id="t-retour" ${ed?(ed.retour!==false?'checked':''):'checked'}>
+        <div class="tog-lbl">
+          <strong>Retour (heen en terug)</strong>
+          <span>Uitvinken als je maar één kant op rijdt — km worden dan gehalveerd</span>
+        </div>
+      </label>
 
       ${hkm>0?`<div id="deduct-wrap">
         <label class="tog" for="t-ded" style="${initDep==='office'?'opacity:.5;background:var(--g100)':''}">
@@ -522,7 +529,7 @@ function empHist(){
         </div>
         <div class="ei-r" style="align-self:flex-start">
           ${e.type==='park'?`<div class="ei-amt">${fmtEur(parseFloat(e.parkAmt)||0)}</div>`
-          :`<div class="ei-amt">${calcEntry(e,users).kmNet.toFixed(1)} km</div>${e.dedcut?'<div class="ei-km" style="color:var(--p)">− woon-werk</div>':''}`}
+          :`<div class="ei-amt">${calcEntry(e,users).kmNet.toFixed(1)} km</div><div class="ei-km">${e.retour===false?'enkele reis':'retour'}</div>${e.dedcut?'<div class="ei-km" style="color:var(--p)">− woon-werk</div>':''}`}
         </div>
       </div>`).join('')}
     </div>`}
@@ -771,7 +778,10 @@ async function geocodeAddress(address){
   if(!resp.ok)throw new Error('Geocoding niet beschikbaar');
   const data=await resp.json();
   if(!data.length)throw new Error('Adres niet gevonden: "'+address+'"');
-  return{lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};
+  // Shorten display_name: take first 3 parts (street, city, country)
+  const parts=data[0].display_name.split(', ');
+  const short=parts.slice(0,3).join(', ');
+  return{lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon),label:short};
 }
 
 async function getRouteKm(a,b){
@@ -803,9 +813,19 @@ async function handleCalcRoute(){
   try{
     const[org,dst]=await Promise.all([geocodeAddress(originAddr),geocodeAddress(addr+', Nederland')]);
     const oneWay=await getRouteKm(org,dst);
-    const rt=Math.round(oneWay*2*10)/10;
+    const retour=document.getElementById('t-retour')?.checked!==false;
+    const rt=retour?Math.round(oneWay*2*10)/10:Math.round(oneWay*10)/10;
     document.getElementById('t-km').value=rt;
-    if(resultEl){resultEl.className='route-ok';resultEl.innerHTML='✅ Route berekend: <strong>'+oneWay.toFixed(1)+' km</strong> enkele reis → <strong>'+rt+' km</strong> retour (automatisch ingevuld)';resultEl.style.display='block';}
+    if(resultEl){
+      resultEl.className='route-ok';
+      resultEl.innerHTML=
+        '<div style="margin-bottom:6px;font-size:12px;opacity:.75">📍 Gevonden adressen:</div>'+
+        '<div style="font-size:13px;margin-bottom:2px">🏠/🏢 <strong>Van:</strong> '+org.label+'</div>'+
+        '<div style="font-size:13px;margin-bottom:8px">📌 <strong>Naar:</strong> '+dst.label+'</div>'+
+        '<div style="font-weight:700">✅ '+oneWay.toFixed(1)+' km enkele reis'+(retour?' → '+rt+' km retour':'')+' (automatisch ingevuld)</div>'+
+        '<div style="font-size:12px;opacity:.75;margin-top:3px">Klopt het adres niet? Pas het in het veld aan en bereken opnieuw.</div>';
+      resultEl.style.display='block';
+    }
     const destFld=document.getElementById('t-dest');
     if(destFld&&!destFld.value)destFld.value=addr;
     toast('Route berekend! 🗺️','ok');
@@ -855,6 +875,12 @@ function bind(){
 
   // Trip form
   document.getElementById('btn-save-trip')?.addEventListener('click',doSaveTrip);
+  document.getElementById('t-retour')?.addEventListener('change',function(){
+    const km=parseFloat(document.getElementById('t-km').value);
+    if(!km)return;
+    if(this.checked){document.getElementById('t-km').value=Math.round(km*2*10)/10;}
+    else{document.getElementById('t-km').value=Math.round(km/2*10)/10;}
+  });
   document.getElementById('btn-calc-route')?.addEventListener('click',handleCalcRoute);
   document.querySelectorAll('input[name="departure"]').forEach(el=>el.addEventListener('change',function(){
     applyDeparture(this.value);
@@ -974,6 +1000,7 @@ function doSaveTrip(){
   const proj=document.getElementById('t-proj').value.trim();
   const kmTot=parseFloat(document.getElementById('t-km').value);
   const dedcut=document.getElementById('t-ded')?.checked||false;
+  const retour=document.getElementById('t-retour')?.checked!==false;
   const departure=document.querySelector('input[name="departure"]:checked')?.value||'home';
   const addr=document.getElementById('t-addr')?.value.trim()||'';
   const notes=document.getElementById('t-notes').value.trim();
@@ -984,9 +1011,9 @@ function doSaveTrip(){
   const ents=DB.entries();
   if(S.editEntry){
     const i=ents.findIndex(e=>e.id===S.editEntry.id);
-    if(i>=0)ents[i]={...ents[i],date,dest,proj,addr,departure,kmTot,dedcut,notes,upd:new Date().toISOString()};
+    if(i>=0)ents[i]={...ents[i],date,dest,proj,addr,departure,kmTot,retour,dedcut,notes,upd:new Date().toISOString()};
   }else{
-    ents.push({id:DB.uid(),uid:S.user.id,type:'trip',date,dest,proj,addr,departure,kmTot,dedcut,notes,status:'pending',cre:new Date().toISOString()});
+    ents.push({id:DB.uid(),uid:S.user.id,type:'trip',date,dest,proj,addr,departure,kmTot,retour,dedcut,notes,status:'pending',cre:new Date().toISOString()});
   }
   DB.saveEntries(ents);S.editEntry=null;toast('Rit opgeslagen! 🚗','ok');go('emp-home');
 }
