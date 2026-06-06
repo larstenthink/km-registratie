@@ -376,8 +376,7 @@ function empHome(){
       <div class="sc"><div class="sc-val">${tkm.toFixed(1)}</div><div class="sc-lbl">km declarabel</div><div class="sc-sub">deze maand</div></div>
       <div class="sc"><div class="sc-val">${fmtEur(tpark)}</div><div class="sc-lbl">parkeerkosten</div><div class="sc-sub">deze maand</div></div>
     </div>
-    ${u?.homeKm>0?`<div style="margin:10px 14px 0;padding:10px 14px;background:var(--p-lt);border-radius:10px;font-size:12px;color:var(--p-dk)"><strong>Woon-werk: ${u.homeKm} km</strong> wordt automatisch afgetrokken op contractdagen${cdays?' ('+cdays+')':''}</div>`:''}
-    <div style="padding:12px 14px 0;display:flex;gap:10px">
+        <div style="padding:12px 14px 0;display:flex;gap:10px">
       <button class="btn btn-p" style="flex:1" data-nav="emp-trip">${I.car} Rit invoeren</button>
       <button class="btn btn-gh" style="flex:1" data-nav="emp-park">${I.park} Parkeerbon</button>
     </div>
