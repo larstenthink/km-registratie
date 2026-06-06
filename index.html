@@ -560,7 +560,9 @@ function adminWrap(){
 function adminDash(){
   const users=DB.users().filter(u=>u.role!=='admin');
   const ents=DB.entries();const s=DB.settings();
-  const am=activeMonth();const me=ents.filter(e=>e.date.startsWith(am));
+  const am=activeMonth();
+  const showOpen=S.month==='open';
+  const me=showOpen?ents.filter(e=>e.status==='pending'):ents.filter(e=>e.date.startsWith(am));
   let totKmAmt=0,totPark=0,pendCt=0;
   me.forEach(e=>{const c=calcEntry(e,users);if(e.type==='park')totPark+=c.amt;else totKmAmt+=c.amt;if(e.status==='pending')pendCt++});
   const rows=users.map(u=>{
@@ -569,16 +571,19 @@ function adminDash(){
     ue.forEach(e=>{const c=calcEntry(e,[u]);if(e.type==='park')pk+=c.amt;else{km+=c.kmNet;kmA+=c.amt}});
     const pendAmt=ue.filter(e=>e.status==='pending').reduce((s,e)=>s+calcEntry(e,[u]).amt,0);
     return{u,km,kmA,pk,tot:kmA+pk,pendAmt};
-  }).filter(r=>r.tot>0||r.km>0);
+  }).filter(r=>showOpen?r.pendAmt>0:r.tot>0||r.km>0);
   return`<div style="padding-bottom:80px">
-    <div class="mf">${months().map(m=>`<button class="mb ${m===am?'on':''}" data-month="${m}">${fmtMonth(m)}</button>`).join('')}</div>
+    <div class="mf">
+      <button class="mb ${showOpen?'on':''}" data-month="open" style="${showOpen?'':''}">🔴 Alles open</button>
+      ${months().map(m=>`<button class="mb ${!showOpen&&m===am?'on':''}" data-month="${m}">${fmtMonth(m)}</button>`).join('')}
+    </div>
     <div class="sg sg3">
       <div class="sc"><div class="sc-val" style="font-size:18px">${fmtEur(totKmAmt+totPark)}</div><div class="sc-lbl">Totaal open</div><div class="sc-sub">${pendCt} items</div></div>
       <div class="sc"><div class="sc-val" style="font-size:18px">${fmtEur(totKmAmt)}</div><div class="sc-lbl">Km-vergoeding</div><div class="sc-sub">€ ${s.kmRate}/km</div></div>
       <div class="sc"><div class="sc-val" style="font-size:18px">${fmtEur(totPark)}</div><div class="sc-lbl">Parkeerkosten</div></div>
     </div>
     <div class="sh" style="padding-top:14px">
-      <div class="sh-t">Per medewerker — ${fmtMonth(am)}</div>
+      <div class="sh-t">${showOpen?'Alle openstaande declaraties':'Per medewerker — '+fmtMonth(am)}</div>
       <button class="btn btn-sm btn-gh" id="btn-csv-dash">${I.dl} CSV</button>
     </div>
     ${rows.length===0?`<div class="empty"><div class="empty-ic">📊</div><div class="empty-t">Geen data</div><div class="empty-s">Geen declaraties voor ${fmtMonth(am)}</div></div>`
