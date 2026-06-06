@@ -494,7 +494,7 @@ function empAddPark(){
           ${ed?.receipt?`<img src="${ed.receipt}" class="up-prev" id="up-prev"><div class="up-txt" style="margin-top:8px">📎 Foto bijgevoegd — klik om te vervangen</div>`
           :`<div class="up-icon">📷</div><div class="up-txt">Klik om foto te maken of te uploaden</div><div class="up-sub">JPG of PNG</div><img class="up-prev" id="up-prev" style="display:none">`}
         </div>
-        <input type="file" id="p-file" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="p-file" accept="image/*" style="display:none">
       </div>
       <button class="btn btn-p btn-w" id="btn-save-park">${I.chk} ${ed?'Wijzigingen opslaan':'Bon opslaan'}</button>
       ${ed?`<button class="btn btn-gh btn-w" style="margin-top:8px" id="btn-cancel-ed">Annuleren</button>`:''}
