@@ -250,7 +250,7 @@ const DB={
 };
 
 // ─── STATE ────────────────────────────────────────────────────
-const S={user:null,page:'login',tab:'dash',month:null,editEntry:null,entPeriod:'all',collapsed:{}};
+const S={user:null,page:'login',tab:'dash',month:null,editEntry:null,entPeriod:'all',collapsed:{},typeFilter:'all'};
 
 // ─── ROUTER ──────────────────────────────────────────────────
 function go(page,extra={}){Object.assign(S,extra);S.page=page;draw()}
@@ -611,7 +611,7 @@ function adminEnts(){
   const recentMonths=months().slice(0,4);
   const empUsers=users.filter(u=>u.active!==false);
   const blocks=empUsers.map(u=>{
-    const ue=allEntries.filter(e=>e.uid===u.id&&periodFilter(e));
+    const ue=allEntries.filter(e=>e.uid===u.id&&periodFilter(e)&&(tf==='all'||e.type===tf));
     if(!ue.length)return'';
     const pend=ue.filter(e=>e.status==='pending');
     const pendAmt=pend.reduce((s,e)=>s+calcEntry(e,[u]).amt,0);
@@ -652,10 +652,16 @@ function adminEnts(){
       }).join('')}</div>
     </div>`;
   }).filter(Boolean);
+  const tf=S.typeFilter||'all';
   return`<div style="padding-bottom:80px">
-    <div class="period-btns">
+    <div class="period-btns" style="padding-bottom:0">
       ${periods.map(p=>`<button class="pb ${period===p.k?'on':''}" data-period="${p.k}">${p.lbl}</button>`).join('')}
       ${recentMonths.map(m=>`<button class="pb ${period===m?'on':''}" data-period="${m}">${fmtMonth(m)}</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:7px;padding:6px 14px 10px">
+      <button class="pb ${tf==='all'?'on':''}" data-type-filter="all">🚗🅿️ Alles</button>
+      <button class="pb ${tf==='trip'?'on':''}" data-type-filter="trip">🚗 Ritten</button>
+      <button class="pb ${tf==='park'?'on':''}" data-type-filter="park">🅿️ Parkeren</button>
     </div>
     ${blocks.length?blocks.join(''):`<div class="empty"><div class="empty-ic">📋</div><div class="empty-t">Geen declaraties</div><div class="empty-s">Geen invoer voor deze periode</div></div>`}
   </div>`;
@@ -879,12 +885,13 @@ function bind(){
   document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>{S.editEntry=null;go(el.dataset.nav)}));
   document.querySelectorAll('[data-atab]').forEach(el=>el.addEventListener('click',()=>{
     S.tab=el.dataset.atab;S.month=null;
-    if(S.tab==='ents')S.entPeriod='all';
+    if(S.tab==='ents'){S.entPeriod='all';S.typeFilter='all';}
     if(S.tab==='mijnkm')S.page='emp-home';
     draw();
   }));
   document.querySelectorAll('[data-month]').forEach(el=>el.addEventListener('click',()=>{S.month=el.dataset.month;draw()}));
   document.querySelectorAll('[data-period]').forEach(el=>el.addEventListener('click',()=>{S.entPeriod=el.dataset.period;draw()}));
+  document.querySelectorAll('[data-type-filter]').forEach(el=>el.addEventListener('click',()=>{S.typeFilter=el.dataset.typeFilter;draw()}));
 
   // Collapse/expand employee blocks
   document.querySelectorAll('[data-collapse-user]').forEach(el=>el.addEventListener('click',function(ev){
@@ -963,6 +970,7 @@ function bind(){
     toast('Ongedaan gemaakt ↩','');draw();
   }));
   document.querySelectorAll('[data-period]').forEach(el=>el.addEventListener('click',()=>{S.entPeriod=el.dataset.period;draw()}));
+  document.querySelectorAll('[data-type-filter]').forEach(el=>el.addEventListener('click',()=>{S.typeFilter=el.dataset.typeFilter;draw()}));
 
   // Collapse/expand employee blocks
   document.querySelectorAll('[data-collapse-user]').forEach(el=>el.addEventListener('click',function(ev){
