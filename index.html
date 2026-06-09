@@ -486,7 +486,7 @@ function empAddPark(){
         <div style="position:relative"><span class="eu-prefix">€</span><input class="fi" type="number" id="p-amt" placeholder="0,00" min="0" step="0.01" style="padding-left:30px" value="${ed?.parkAmt||''}"></div>
       </div>
       <div class="fg">
-        <label class="fl">Foto van bon <span style="color:var(--g400);font-weight:400">(optioneel)</span></label>
+        <label class="fl">Foto van bon <span style="color:var(--red);font-weight:500">*</span></label>
         <div class="up-area ${ed?.receipt?'has-file':''}" id="up-area" onclick="document.getElementById('p-file').click()">
           ${ed?.receipt?`<img src="${ed.receipt}" class="up-prev" id="up-prev"><div class="up-txt" style="margin-top:8px">📎 Foto bijgevoegd — klik om te vervangen</div>`
           :`<div class="up-icon">📷</div><div class="up-txt">Klik om foto te maken of te uploaden</div><div class="up-sub">JPG of PNG</div><img class="up-prev" id="up-prev" style="display:none">`}
@@ -1093,6 +1093,7 @@ function doSavePark(){
   if(!loc){toast('Vul een locatie in','err');return}
   if(!proj){toast('Vul een project / klantnaam in','err');return}
   if(!amt||amt<=0){toast('Vul een geldig bedrag in','err');return}
+  if(!receipt){toast('Voeg een foto van de bon toe','err');return}
   const ents=DB.entries();
   if(S.editEntry){
     const i=ents.findIndex(e=>e.id===S.editEntry.id);
