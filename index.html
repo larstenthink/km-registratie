@@ -558,7 +558,7 @@ function adminWrap(){
 }
 
 function adminDash(){
-  const users=DB.users().filter(u=>u.role!=='admin');
+  const users=DB.users();
   const ents=DB.entries();const s=DB.settings();
   const am=activeMonth();
   const showOpen=S.month==='open';
