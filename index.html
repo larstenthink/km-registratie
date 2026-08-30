@@ -641,6 +641,7 @@ function adminEnts(){
       if(e.status==='pending') badgesHtml+='<button class="btn btn-sm btn-g" data-reim="'+e.id+'">'+I.chk+' Vergoeden</button>';
       if(e.status==='reimbursed') badgesHtml+='<button class="btn btn-sm btn-gh" style="color:var(--amber)" data-unreim="'+e.id+'">↩ Ongedaan</button>';
       if(isPark&&e.receipt) badgesHtml+='<button class="btn btn-sm btn-gh" data-view-rec="'+e.id+'">'+I.eye+' Bon</button>';
+      badgesHtml+='<button class="btn btn-sm btn-gh" data-adm-edit="'+e.id+'">✏️ Bewerken</button>';
       badgesHtml+='<button class="btn btn-sm btn-gh" style="color:var(--red)" data-adm-del="'+e.id+'">'+I.trash+'</button>';
 
       let kmHtml='';
@@ -811,6 +812,89 @@ function receiptModal(eid){
       <div style="margin-top:10px;color:var(--g600);font-size:14px">${fmtDate(e.date)} · ${H(e.loc||'')} · ${fmtEur(parseFloat(e.parkAmt)||0)}</div>
     </div>
   </div>`;
+}
+
+function adminEditModal(eid){
+  const e=DB.entries().find(x=>x.id===eid);if(!e)return'';
+  const isPark=e.type==='park';
+  let form='';
+  if(isPark){
+    form=
+      '<div class="fg"><label class="fl">Datum</label><input class="fi" type="date" id="ae-date" value="'+H(e.date||'')+'"></div>'+
+      '<div class="fg"><label class="fl">Locatie</label><input class="fi" type="text" id="ae-loc" placeholder="Parkeerlocatie" value="'+H(e.loc||'')+'"></div>'+
+      '<div class="fg"><label class="fl">Project / klant</label><input class="fi" type="text" id="ae-proj" placeholder="Projectnaam" value="'+H(e.proj||'')+'"></div>'+
+      '<div class="fg"><label class="fl">Bedrag (€)</label><div style="position:relative"><span class="eu-prefix">€</span><input class="fi" type="number" id="ae-amt" placeholder="0,00" min="0" step="0.01" style="padding-left:30px" value="'+(e.parkAmt||'')+'"></div></div>'+
+      '<div class="fg"><label class="fl">Foto van bon</label>'+
+        '<div class="up-area '+(e.receipt?'has-file':'')+'" id="ae-up-area" onclick="document.getElementById(\'ae-file\').click()">'+
+          (e.receipt
+            ?'<img src="'+e.receipt+'" class="up-prev" id="ae-prev"><div class="up-txt" style="margin-top:8px">📎 Foto bijgevoegd — klik om te vervangen</div>'
+            :'<div class="up-icon">📷</div><div class="up-txt">Klik om foto te maken of te uploaden</div><div class="up-sub">JPG of PNG</div><img class="up-prev" id="ae-prev" style="display:none">')+
+        '</div>'+
+        '<input type="file" id="ae-file" accept="image/*" style="display:none">'+
+      '</div>';
+  }else{
+    const dep=e.departure||'home';
+    const retour=e.retour!==false;
+    form=
+      '<div class="fg"><label class="fl">Datum</label><input class="fi" type="date" id="ae-date" value="'+H(e.date||'')+'"></div>'+
+      '<div class="fg"><label class="fl">Bestemming</label><input class="fi" type="text" id="ae-dest" placeholder="Bestemming" value="'+H(e.dest||'')+'"></div>'+
+      '<div class="fg"><label class="fl">Project / klant</label><input class="fi" type="text" id="ae-proj" placeholder="Projectnaam" value="'+H(e.proj||'')+'"></div>'+
+      '<div class="fg"><label class="fl">Kilometers (totaal)</label><input class="fi" type="number" id="ae-km" placeholder="0" min="0" step="0.1" value="'+(e.kmTot||'')+'"></div>'+
+      '<div class="fg"><label class="fl">Vertrekpunt</label>'+
+        '<div style="display:flex;gap:12px;margin-top:4px">'+
+          '<label style="display:flex;align-items:center;gap:6px;font-size:14px"><input type="radio" name="ae-dep" value="home" '+(dep==='home'?'checked':'')+'>🏠 Thuis</label>'+
+          '<label style="display:flex;align-items:center;gap:6px;font-size:14px"><input type="radio" name="ae-dep" value="office" '+(dep==='office'?'checked':'')+'>🏢 Kantoor</label>'+
+          '<label style="display:flex;align-items:center;gap:6px;font-size:14px"><input type="radio" name="ae-dep" value="other" '+(dep==='other'?'checked':'')+'>📍 Overig</label>'+
+        '</div>'+
+      '</div>'+
+      '<div class="fg"><label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" id="ae-retour" '+(retour?'checked':'')+' style="width:18px;height:18px"> Retour (heen en terug)</label></div>'+
+      '<div class="fg"><label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" id="ae-ded" '+(e.dedcut?'checked':'')+' style="width:18px;height:18px"> Woon-werk aftrek toepassen</label></div>'+
+      '<div class="fg"><label class="fl">Notities <span style="color:var(--g400);font-weight:400">(optioneel)</span></label><textarea class="fta" id="ae-notes" placeholder="Extra toelichting...">'+H(e.notes||'')+'</textarea></div>';
+  }
+  return'<div class="mo-ov" id="ae-ov">'+
+    '<div class="mo" style="border-radius:16px;max-width:480px">'+
+      '<div class="mo-hdr"><div class="mo-title">'+(isPark?'🅿️ Parkeerbon':'🚗 Rit')+' bewerken</div><button class="btn-ic" id="ae-close">✕</button></div>'+
+      '<div class="mo-body">'+form+'</div>'+
+      '<div style="padding:16px;padding-top:0">'+
+        '<button class="btn btn-p btn-w" id="ae-save" data-eid="'+eid+'">'+I.chk+' Opslaan</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function doAdmSaveEntry(eid){
+  const e=DB.entries().find(x=>x.id===eid);if(!e)return;
+  const isPark=e.type==='park';
+  const date=document.getElementById('ae-date').value;
+  const proj=document.getElementById('ae-proj').value.trim();
+  if(!date){toast('Vul een datum in','err');return}
+  if(!proj){toast('Vul een project / klantnaam in','err');return}
+  let upd={...e,date,proj,upd:new Date().toISOString()};
+  if(isPark){
+    const loc=document.getElementById('ae-loc').value.trim();
+    const amt=parseFloat(document.getElementById('ae-amt').value);
+    const prevEl=document.getElementById('ae-prev');
+    const receipt=prevEl?.dataset.b64||(e.receipt||null);
+    if(!loc){toast('Vul een locatie in','err');return}
+    if(!amt||amt<=0){toast('Vul een geldig bedrag in','err');return}
+    if(!receipt){toast('Voeg een foto van de bon toe','err');return}
+    upd={...upd,loc,parkAmt:amt,receipt};
+  }else{
+    const dest=document.getElementById('ae-dest').value.trim();
+    const kmTot=parseFloat(document.getElementById('ae-km').value);
+    const departure=document.querySelector('input[name="ae-dep"]:checked')?.value||'home';
+    const retour=document.getElementById('ae-retour')?.checked!==false;
+    const dedcut=document.getElementById('ae-ded')?.checked||false;
+    const notes=document.getElementById('ae-notes').value.trim();
+    if(!dest){toast('Vul een bestemming in','err');return}
+    if(!kmTot||kmTot<=0){toast('Vul geldige kilometers in','err');return}
+    upd={...upd,dest,kmTot,departure,retour,dedcut,notes};
+  }
+  const ents=DB.entries();const i=ents.findIndex(x=>x.id===eid);
+  if(i>=0)ents[i]=upd;
+  DB.saveEntries(ents);
+  document.getElementById('modal-ct').innerHTML='';
+  toast('Opgeslagen! ✅','ok');draw();
 }
 
 // ─── CSV EXPORT ──────────────────────────────────────────────
@@ -1029,6 +1113,37 @@ function bind(){
     const c=document.getElementById('modal-ct');c.innerHTML=receiptModal(el.dataset.viewRec);
     document.getElementById('btn-close-rec')?.addEventListener('click',()=>c.innerHTML='');
     document.getElementById('rec-ov')?.addEventListener('click',ev=>{if(ev.target.id==='rec-ov')c.innerHTML='';});
+  }));
+  document.querySelectorAll('[data-adm-edit]').forEach(el=>el.addEventListener('click',()=>{
+    const eid=el.dataset.admEdit;
+    const c=document.getElementById('modal-ct');
+    c.innerHTML=adminEditModal(eid);
+    document.getElementById('ae-close')?.addEventListener('click',()=>c.innerHTML='');
+    document.getElementById('ae-ov')?.addEventListener('click',ev=>{if(ev.target.id==='ae-ov')c.innerHTML='';});
+    document.getElementById('ae-save')?.addEventListener('click',()=>doAdmSaveEntry(eid));
+    // foto upload voor parkeerbon
+    const fileInput=document.getElementById('ae-file');
+    if(fileInput){
+      fileInput.addEventListener('change',ev=>{
+        const file=ev.target.files[0];if(!file)return;
+        const reader=new FileReader();
+        reader.onload=re=>{
+          const img=new Image();
+          img.onload=()=>{
+            const canvas=document.createElement('canvas');
+            const max=1200;let w=img.width,h=img.height;
+            if(w>max){h=Math.round(h*max/w);w=max;}
+            canvas.width=w;canvas.height=h;
+            canvas.getContext('2d').drawImage(img,0,0,w,h);
+            const b64=canvas.toDataURL('image/jpeg',0.75);
+            const prev=document.getElementById('ae-prev');
+            prev.src=b64;prev.style.display='block';prev.dataset.b64=b64;
+            const area=document.getElementById('ae-up-area');
+            area.classList.add('has-file');
+          };img.src=re.target.result;
+        };reader.readAsDataURL(file);
+      });
+    }
   }));
   document.getElementById('btn-add-usr')?.addEventListener('click',()=>{const c=document.getElementById('modal-ct');c.innerHTML=userModal(null);bindMo()});
   document.querySelectorAll('[data-ed-usr]').forEach(el=>el.addEventListener('click',()=>{const c=document.getElementById('modal-ct');c.innerHTML=userModal(el.dataset.edUsr);bindMo()}));
